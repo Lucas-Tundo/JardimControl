@@ -1,0 +1,500 @@
+// Jardim Control · modelo de dados
+// SQLite não suporta enums nativos: os valores permitidos ficam documentados
+// nos comentários e centralizados em src/lib/constants.ts.
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+// ---------------------------------------------------------------------------
+// Usuários e equipes
+// ---------------------------------------------------------------------------
+
+model User {
+  id           String   @id @default(cuid())
+  name         String
+  login        String   @unique
+  email        String?
+  phone        String?
+  passwordHash String
+  /// ADMIN | LIDER | JARDINEIRO
+  role         String   @default("JARDINEIRO")
+  active       Boolean  @default(true)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  memberships         TeamMember[]
+  assignedTasks       Task[]                @relation("TaskAssignee")
+  createdTasks        Task[]                @relation("TaskCreatedBy")
+  updatedTasks        Task[]                @relation("TaskUpdatedBy")
+  approvedTasks       Task[]                @relation("TaskApprovedBy")
+  deletedTasks        Task[]                @relation("TaskDeletedBy")
+  photos              Photo[]
+  checklistChecks     TaskChecklistItem[]
+  timeLogs            TimeLog[]
+  approvals           Approval[]
+  reportedOccurrences Occurrence[]          @relation("OccurrenceReporter")
+  responsibleOccurrences Occurrence[]       @relation("OccurrenceResponsible")
+  resolvedOccurrences Occurrence[]          @relation("OccurrenceResolvedBy")
+  notifications       Notification[]
+  auditLogs           AuditLog[]
+  responsibleLocations Location[]           @relation("LocationResponsible")
+  recurrencesAssigned RecurringMaintenance[] @relation("RecurrenceAssignee")
+  recurrencesCreated  RecurringMaintenance[] @relation("RecurrenceCreatedBy")
+  schedulesCreated    Schedule[]
+  reports             Report[]
+  checklistTemplates  ChecklistTemplate[]
+}
+
+model Team {
+  id          String   @id @default(cuid())
+  name        String   @unique
+  description String?
+  color       String   @default("#16a34a")
+  active      Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  members     TeamMember[]
+  tasks       Task[]
+  locations   Location[]
+  recurrences RecurringMaintenance[]
+}
+
+model TeamMember {
+  id        String   @id @default(cuid())
+  teamId    String
+  userId    String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  team Team @relation(fields: [teamId], references: [id], onDelete: Cascade)
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([teamId, userId])
+  @@index([userId])
+}
+
+// ---------------------------------------------------------------------------
+// Áreas, locais e QR Codes
+// ---------------------------------------------------------------------------
+
+model Area {
+  id          String   @id @default(cuid())
+  name        String
+  code        String   @unique
+  description String?
+  color       String   @default("#86efac")
+  // Retângulo na planta simplificada (percentual 0-100)
+  mapX        Float    @default(5)
+  mapY        Float    @default(5)
+  mapW        Float    @default(20)
+  mapH        Float    @default(15)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  locations   Location[]
+  tasks       Task[]
+  recurrences RecurringMaintenance[]
+}
+
+model Location {
+  id                   String   @id @default(cuid())
+  areaId               String
+  name                 String
+  code                 String   @unique
+  description          String?
+  address              String?
+  latitude             Float?
+  longitude            Float?
+  // Ponto na planta simplificada (percentual 0-100)
+  mapX                 Float?
+  mapY                 Float?
+  responsibleUserId    String?
+  responsibleTeamId    String?
+  /// Frequência sugerida: UNICA | DIARIA | SEMANAL | QUINZENAL | MENSAL | PERSONALIZADA
+  maintenanceFrequency String?
+  notes                String?
+  active               Boolean  @default(true)
+  createdAt            DateTime @default(now())
+  updatedAt            DateTime @updatedAt
+
+  area            Area                   @relation(fields: [areaId], references: [id])
+  responsibleUser User?                  @relation("LocationResponsible", fields: [responsibleUserId], references: [id], onDelete: SetNull)
+  responsibleTeam Team?                  @relation(fields: [responsibleTeamId], references: [id], onDelete: SetNull)
+  qrCode          QrCode?
+  tasks           Task[]
+  photos          Photo[]
+  occurrences     Occurrence[]
+  recurrences     RecurringMaintenance[]
+  auditLogs       AuditLog[]
+
+  @@index([areaId])
+}
+
+model QrCode {
+  id         String   @id @default(cuid())
+  locationId String   @unique
+  token      String   @unique
+  scans      Int      @default(0)
+  lastScanAt DateTime?
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  location Location @relation(fields: [locationId], references: [id], onDelete: Cascade)
+}
+
+// ---------------------------------------------------------------------------
+// Cronogramas, recorrências e tarefas
+// ---------------------------------------------------------------------------
+
+model Schedule {
+  id          String    @id @default(cuid())
+  name        String
+  description String?
+  startDate   DateTime
+  endDate     DateTime?
+  createdById String
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  createdBy   User                   @relation(fields: [createdById], references: [id])
+  tasks       Task[]
+  recurrences RecurringMaintenance[]
+}
+
+model RecurringMaintenance {
+  id                  String    @id @default(cuid())
+  title               String
+  instructions        String?
+  type                String
+  priority            String    @default("MEDIA")
+  locationId          String
+  areaId              String
+  assigneeUserId      String?
+  assigneeTeamId      String?
+  scheduleId          String?
+  checklistTemplateId String?
+  /// DIARIA | SEMANAL | QUINZENAL | MENSAL | PERSONALIZADA
+  frequency           String
+  /// Usado quando frequency = PERSONALIZADA
+  intervalDays        Int?
+  startDate           DateTime
+  endDate             DateTime?
+  /// Horário padrão "HH:mm"
+  timeOfDay           String    @default("08:00")
+  /// Prazo em horas após o início programado
+  durationHours       Int       @default(8)
+  /// JSON: [{ text, required }]
+  checklistJson       String    @default("[]")
+  active              Boolean   @default(true)
+  lastGeneratedDate   DateTime?
+  createdById         String
+  createdAt           DateTime  @default(now())
+  updatedAt           DateTime  @updatedAt
+
+  location          Location           @relation(fields: [locationId], references: [id])
+  area              Area               @relation(fields: [areaId], references: [id])
+  assigneeUser      User?              @relation("RecurrenceAssignee", fields: [assigneeUserId], references: [id], onDelete: SetNull)
+  assigneeTeam      Team?              @relation(fields: [assigneeTeamId], references: [id], onDelete: SetNull)
+  schedule          Schedule?          @relation(fields: [scheduleId], references: [id], onDelete: SetNull)
+  checklistTemplate ChecklistTemplate? @relation(fields: [checklistTemplateId], references: [id], onDelete: SetNull)
+  createdBy         User               @relation("RecurrenceCreatedBy", fields: [createdById], references: [id])
+  tasks             Task[]
+
+  @@index([active])
+}
+
+model Task {
+  id                String    @id @default(cuid())
+  number            Int       @unique
+  title             String
+  /// Problema identificado (ronda/ocorrência)
+  description       String?
+  instructions      String?
+  /// CORTE_GRAMA | PODA | CAPINA | IRRIGACAO | PLANTIO | ADUBACAO | LIMPEZA | CONTROLE_PRAGAS | CANTEIROS | RESIDUOS_VERDES | OUTROS
+  type              String
+  /// BAIXA | MEDIA | ALTA | URGENTE
+  priority          String    @default("MEDIA")
+  /// PROGRAMADA | PENDENTE | EM_ANDAMENTO | AGUARDANDO_APROVACAO | CONCLUIDA | ATRASADA | CANCELADA
+  status            String    @default("PROGRAMADA")
+  /// UNICA | DIARIA | SEMANAL | QUINZENAL | MENSAL | PERSONALIZADA
+  periodicity       String    @default("UNICA")
+  /// MANUAL | RONDA | QRCODE | OCORRENCIA | RECORRENTE
+  origin            String    @default("MANUAL")
+  locationId        String
+  areaId            String
+  assigneeUserId    String?
+  assigneeTeamId    String?
+  scheduleId        String?
+  recurrenceId      String?
+  scheduledAt       DateTime
+  dueAt             DateTime
+  executionNotes    String?
+  startedAt         DateTime?
+  finishedAt        DateTime?
+  totalMinutes      Int       @default(0)
+  submittedAt       DateTime?
+  approvedAt        DateTime?
+  approvedById      String?
+  returnCount       Int       @default(0)
+  lastReturnReason  String?
+  cancelReason      String?
+  dueSoonNotifiedAt DateTime?
+  lateNotifiedAt    DateTime?
+  createdById       String
+  updatedById       String?
+  deletedAt         DateTime?
+  deletedById       String?
+  deleteReason      String?
+  createdAt         DateTime  @default(now())
+  updatedAt         DateTime  @updatedAt
+
+  location       Location              @relation(fields: [locationId], references: [id])
+  area           Area                  @relation(fields: [areaId], references: [id])
+  assigneeUser   User?                 @relation("TaskAssignee", fields: [assigneeUserId], references: [id], onDelete: SetNull)
+  assigneeTeam   Team?                 @relation(fields: [assigneeTeamId], references: [id], onDelete: SetNull)
+  schedule       Schedule?             @relation(fields: [scheduleId], references: [id], onDelete: SetNull)
+  recurrence     RecurringMaintenance? @relation(fields: [recurrenceId], references: [id], onDelete: SetNull)
+  createdBy      User                  @relation("TaskCreatedBy", fields: [createdById], references: [id])
+  updatedBy      User?                 @relation("TaskUpdatedBy", fields: [updatedById], references: [id])
+  approvedBy     User?                 @relation("TaskApprovedBy", fields: [approvedById], references: [id])
+  deletedBy      User?                 @relation("TaskDeletedBy", fields: [deletedById], references: [id])
+  checklist      TaskChecklistItem[]
+  photos         Photo[]
+  timeLogs       TimeLog[]
+  approvals      Approval[]
+  occurrences    Occurrence[]          @relation("OccurrenceTask")
+  fromOccurrence Occurrence?           @relation("OccurrenceConverted")
+  auditLogs      AuditLog[]
+  notifications  Notification[]
+
+  @@index([status])
+  @@index([scheduledAt])
+  @@index([dueAt])
+  @@index([locationId])
+  @@index([assigneeUserId])
+  @@index([assigneeTeamId])
+  @@index([deletedAt])
+}
+
+// ---------------------------------------------------------------------------
+// Checklists
+// ---------------------------------------------------------------------------
+
+model ChecklistTemplate {
+  id          String   @id @default(cuid())
+  name        String
+  /// Tipo de manutenção sugerido (opcional)
+  type        String?
+  createdById String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  createdBy   User?                   @relation(fields: [createdById], references: [id], onDelete: SetNull)
+  items       ChecklistTemplateItem[]
+  recurrences RecurringMaintenance[]
+}
+
+model ChecklistTemplateItem {
+  id         String   @id @default(cuid())
+  templateId String
+  text       String
+  required   Boolean  @default(false)
+  order      Int      @default(0)
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  template ChecklistTemplate @relation(fields: [templateId], references: [id], onDelete: Cascade)
+
+  @@index([templateId])
+}
+
+model TaskChecklistItem {
+  id          String    @id @default(cuid())
+  taskId      String
+  text        String
+  required    Boolean   @default(false)
+  order       Int       @default(0)
+  done        Boolean   @default(false)
+  doneAt      DateTime?
+  doneById    String?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  task   Task  @relation(fields: [taskId], references: [id], onDelete: Cascade)
+  doneBy User? @relation(fields: [doneById], references: [id], onDelete: SetNull)
+
+  @@index([taskId])
+}
+
+// ---------------------------------------------------------------------------
+// Fotos, tempo, aprovações
+// ---------------------------------------------------------------------------
+
+model Photo {
+  id           String   @id @default(cuid())
+  fileName     String
+  mimeType     String   @default("image/jpeg")
+  /// REFERENCIA (local) | ANTES | DURANTE | DEPOIS | OCORRENCIA
+  stage        String
+  caption      String?
+  taskId       String?
+  locationId   String
+  occurrenceId String?
+  uploadedById String
+  takenAt      DateTime @default(now())
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  task       Task?       @relation(fields: [taskId], references: [id], onDelete: SetNull)
+  location   Location    @relation(fields: [locationId], references: [id])
+  occurrence Occurrence? @relation(fields: [occurrenceId], references: [id], onDelete: SetNull)
+  uploadedBy User        @relation(fields: [uploadedById], references: [id])
+
+  @@index([taskId])
+  @@index([locationId])
+  @@index([occurrenceId])
+  @@index([createdAt])
+}
+
+model TimeLog {
+  id        String    @id @default(cuid())
+  taskId    String
+  userId    String
+  startedAt DateTime
+  endedAt   DateTime?
+  minutes   Int       @default(0)
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+
+  task Task @relation(fields: [taskId], references: [id], onDelete: Cascade)
+  user User @relation(fields: [userId], references: [id])
+
+  @@index([taskId])
+}
+
+model Approval {
+  id         String   @id @default(cuid())
+  taskId     String
+  reviewerId String
+  /// APROVADA | DEVOLVIDA
+  decision   String
+  comment    String?
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  task     Task @relation(fields: [taskId], references: [id], onDelete: Cascade)
+  reviewer User @relation(fields: [reviewerId], references: [id])
+
+  @@index([taskId])
+}
+
+// ---------------------------------------------------------------------------
+// Ocorrências
+// ---------------------------------------------------------------------------
+
+model Occurrence {
+  id                String    @id @default(cuid())
+  number            Int       @unique
+  /// ARVORE_DANIFICADA | VAZAMENTO_IRRIGACAO | PRAGA | EQUIPAMENTO_DANIFICADO | AREA_INACESSIVEL | MANUTENCAO_ADICIONAL | OUTRO
+  type              String
+  description       String
+  priority          String    @default("MEDIA")
+  /// ABERTA | CONVERTIDA | RESOLVIDA
+  status            String    @default("ABERTA")
+  locationId        String
+  reportedById      String
+  responsibleUserId String?
+  /// Tarefa durante a qual a ocorrência foi registrada
+  taskId            String?
+  /// Tarefa criada a partir da ocorrência
+  convertedTaskId   String?   @unique
+  resolvedAt        DateTime?
+  resolvedById      String?
+  resolutionNotes   String?
+  createdAt         DateTime  @default(now())
+  updatedAt         DateTime  @updatedAt
+
+  location        Location @relation(fields: [locationId], references: [id])
+  reportedBy      User     @relation("OccurrenceReporter", fields: [reportedById], references: [id])
+  responsibleUser User?    @relation("OccurrenceResponsible", fields: [responsibleUserId], references: [id], onDelete: SetNull)
+  resolvedBy      User?    @relation("OccurrenceResolvedBy", fields: [resolvedById], references: [id], onDelete: SetNull)
+  task            Task?    @relation("OccurrenceTask", fields: [taskId], references: [id], onDelete: SetNull)
+  convertedTask   Task?    @relation("OccurrenceConverted", fields: [convertedTaskId], references: [id], onDelete: SetNull)
+  photos          Photo[]
+
+  @@index([status])
+  @@index([locationId])
+}
+
+// ---------------------------------------------------------------------------
+// Notificações, histórico/auditoria e relatórios
+// ---------------------------------------------------------------------------
+
+model Notification {
+  id        String   @id @default(cuid())
+  userId    String
+  /// NOVA_TAREFA | PRAZO_PROXIMO | ATRASADA | CONCLUIDA | DEVOLVIDA | AGUARDANDO_APROVACAO | NOVA_OCORRENCIA | MANUTENCAO_PROGRAMADA | INSTRUCOES
+  type      String
+  title     String
+  message   String
+  link      String?
+  taskId    String?
+  read      Boolean  @default(false)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  user User  @relation(fields: [userId], references: [id], onDelete: Cascade)
+  task Task? @relation(fields: [taskId], references: [id], onDelete: SetNull)
+
+  @@index([userId, read])
+}
+
+model AuditLog {
+  id         String   @id @default(cuid())
+  /// TASK | LOCATION | AREA | OCCURRENCE | USER | TEAM | RECURRENCE | SCHEDULE | CHECKLIST
+  entityType String
+  entityId   String
+  action     String
+  summary    String
+  /// JSON com detalhes (campos alterados etc.)
+  details    String?
+  userId     String?
+  taskId     String?
+  locationId String?
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  user     User?     @relation(fields: [userId], references: [id], onDelete: SetNull)
+  task     Task?     @relation(fields: [taskId], references: [id], onDelete: SetNull)
+  location Location? @relation(fields: [locationId], references: [id], onDelete: SetNull)
+
+  @@index([entityType, entityId])
+  @@index([taskId])
+  @@index([locationId])
+  @@index([createdAt])
+}
+
+model Report {
+  id            String   @id @default(cuid())
+  title         String
+  /// PDF | XLSX
+  format        String
+  /// JSON com filtros aplicados
+  filters       String
+  /// JSON com os indicadores calculados no momento da geração
+  summary       String
+  generatedById String
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  generatedBy User @relation(fields: [generatedById], references: [id])
+
+  @@index([createdAt])
+}
