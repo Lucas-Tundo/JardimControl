@@ -1,8 +1,6 @@
-import { mkdir, writeFile } from "node:fs/promises";
-import path from "node:path";
 import { randomBytes } from "node:crypto";
+import { db } from "./db";
 
-export const UPLOAD_DIR = path.join(process.cwd(), "uploads");
 export const FILE_NAME_RE = /^[a-zA-Z0-9_-]+\.(jpg|jpeg|png|webp|gif|svg)$/;
 
 const EXT_BY_MIME: Record<string, string> = {
@@ -10,15 +8,6 @@ const EXT_BY_MIME: Record<string, string> = {
   "image/png": "png",
   "image/webp": "webp",
   "image/gif": "gif",
-};
-
-export const MIME_BY_EXT: Record<string, string> = {
-  jpg: "image/jpeg",
-  jpeg: "image/jpeg",
-  png: "image/png",
-  webp: "image/webp",
-  gif: "image/gif",
-  svg: "image/svg+xml",
 };
 
 const MAX_BYTES = 15 * 1024 * 1024;
@@ -29,9 +18,8 @@ export async function saveImage(file: File): Promise<SavedFile> {
   const ext = EXT_BY_MIME[file.type];
   if (!ext) throw new Error("Formato de imagem não suportado. Use JPG, PNG ou WEBP.");
   if (file.size > MAX_BYTES) throw new Error("Imagem muito grande (máx. 15 MB).");
-  await mkdir(UPLOAD_DIR, { recursive: true });
   const fileName = `${Date.now().toString(36)}-${randomBytes(6).toString("hex")}.${ext}`;
-  await writeFile(path.join(UPLOAD_DIR, fileName), Buffer.from(await file.arrayBuffer()));
+  await db.storedFile.create({ data: { name: fileName, mimeType: file.type, data: new Uint8Array(await file.arrayBuffer()) } });
   return { fileName, mimeType: file.type };
 }
 

@@ -7,7 +7,7 @@ import { MAINTENANCE_TYPES, PERIODICITIES } from "@/lib/constants";
 import { dateKey } from "@/lib/dates";
 import type { FormOptions } from "@/lib/queries";
 import { ChecklistEditor, type EditableItem } from "./checklist-editor";
-import { Dialog } from "./dialog";
+import { Dialog, ModalFooter, useConfirm } from "./dialog";
 import { AssigneeSelect, LocationSelect, PrioritySelector } from "./task-form";
 import { useToast } from "./toast";
 
@@ -37,7 +37,15 @@ export function RecurrenceDialogButton({ options, initial, label, className = "b
       <button className={className} onClick={() => setOpen(true)}>
         {label}
       </button>
-      <Dialog open={open} onClose={() => setOpen(false)} title={initial?.id ? "Editar manutenção recorrente" : "Nova manutenção recorrente"} wide>
+      <Dialog
+        open={open}
+        onClose={() => setOpen(false)}
+        closeOnBackdrop={false}
+        size="md"
+        kicker="Recorrentes"
+        title={initial?.id ? "Editar manutenção recorrente" : "Nova manutenção recorrente"}
+        description={initial?.id ? "As próximas tarefas programadas são atualizadas ao salvar." : "As tarefas são geradas automaticamente conforme a periodicidade."}
+      >
         {open && <RecurrenceForm options={options} initial={initial} onDone={() => setOpen(false)} />}
       </Dialog>
     </>
@@ -158,9 +166,14 @@ function RecurrenceForm({ options, initial = {}, onDone }: { options: FormOption
         <p className="label">Checklist padrão</p>
         <ChecklistEditor items={checklist} onChange={setChecklist} templates={options.templates} />
       </div>
-      <button className="btn-primary w-full py-3" disabled={pending}>
-        {pending ? "Salvando…" : initial.id ? "Salvar e atualizar próximas tarefas" : "Criar e gerar tarefas"}
-      </button>
+      <ModalFooter>
+        <button type="button" className="btn-secondary" onClick={onDone}>
+          Cancelar
+        </button>
+        <button className="btn-primary" disabled={pending}>
+          {pending ? "Salvando…" : initial.id ? "Salvar e atualizar próximas tarefas" : "Criar e gerar tarefas"}
+        </button>
+      </ModalFooter>
     </form>
   );
 }
@@ -169,12 +182,13 @@ export function ToggleRecurrenceButton({ id, active }: { id: string; active: boo
   const [pending, start] = useTransition();
   const router = useRouter();
   const toast = useToast();
+  const confirm = useConfirm();
   return (
     <button
-      className={active ? "btn-ghost text-amber-700" : "btn-ghost text-brand-700"}
+      className={active ? "btn-ghost text-[var(--ds-orange)]" : "btn-ghost text-brand-700"}
       disabled={pending}
-      onClick={() => {
-        if (active && !confirm("Pausar esta recorrência? As tarefas futuras ainda programadas serão canceladas.")) return;
+      onClick={async () => {
+        if (active && !(await confirm({ title: "Pausar esta recorrência?", description: "As tarefas futuras ainda programadas serão canceladas.", confirmLabel: "Pausar" }))) return;
         start(async () => {
           const r = await toggleRecurrence(id);
           if (!r.ok) return toast.show(r.error, "error");

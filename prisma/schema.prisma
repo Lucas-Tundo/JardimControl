@@ -1,14 +1,16 @@
 // Jardim Control · modelo de dados
-// SQLite não suporta enums nativos: os valores permitidos ficam documentados
-// nos comentários e centralizados em src/lib/constants.ts.
+// Os valores permitidos dos campos de status/tipo ficam documentados nos
+// comentários e centralizados em src/lib/constants.ts.
 
 generator client {
-  provider = "prisma-client-js"
+  provider   = "prisma-client-js"
+  engineType = "client"
 }
 
 datasource db {
-  provider = "sqlite"
-  url      = env("DATABASE_URL")
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_DATABASE_URL")
 }
 
 // ---------------------------------------------------------------------------
@@ -361,6 +363,15 @@ model Photo {
   @@index([locationId])
   @@index([occurrenceId])
   @@index([createdAt])
+}
+
+/// Conteúdo binário das imagens enviadas, servido por /api/files/[name].
+model StoredFile {
+  name      String   @id
+  mimeType  String
+  data      Bytes
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 }
 
 model TimeLog {

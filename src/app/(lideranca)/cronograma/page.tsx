@@ -103,9 +103,9 @@ export default async function SchedulePage({ searchParams }: { searchParams: Pro
           <Link href={qs({ data: "" })} className="btn-secondary min-h-9 px-3">Hoje</Link>
         </div>
         {options.schedules.length > 0 && (
-          <form className="flex items-center gap-2" action="/cronograma">
+          <form className="flex w-full items-center gap-2 sm:w-auto" action="/cronograma">
             {Object.entries(sp).map(([k, v]) => (typeof v === "string" && k !== "cronograma" ? <input key={k} type="hidden" name={k} value={v} /> : null))}
-            <select name="cronograma" defaultValue={scheduleId} className="input w-auto">
+            <select name="cronograma" defaultValue={scheduleId} className="input min-w-0 flex-1 sm:w-auto sm:flex-none">
               <option value="">Todos os cronogramas</option>
               {options.schedules.map((s) => (
                 <option key={s.id} value={s.id}>{s.name}</option>

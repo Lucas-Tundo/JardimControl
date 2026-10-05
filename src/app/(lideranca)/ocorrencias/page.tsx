@@ -7,6 +7,7 @@ import { param, photoInclude, toPhotoView, type SearchParams } from "@/lib/queri
 import { occurrenceCode, taskCode } from "@/lib/tasks";
 import { OCCURRENCE_TYPES } from "@/lib/constants";
 import { AutoRefresh } from "@/components/auto-refresh";
+import { Paged } from "@/components/paged";
 import { PhotoGallery } from "@/components/photos";
 import { ResolveOccurrenceButton } from "@/components/occurrence-form";
 import { EmptyState, OccurrenceStatusBadge, OccurrenceTypeLabel, PageHeader, PriorityBadge, cn } from "@/components/ui";
@@ -74,7 +75,7 @@ export default async function OccurrencesPage({ searchParams }: { searchParams: 
       {list.length === 0 ? (
         <EmptyState icon={TriangleAlert} title="Nenhuma ocorrência encontrada" />
       ) : (
-        <div className="grid gap-3 lg:grid-cols-2">
+        <Paged as="div" className="grid gap-3 lg:grid-cols-2" pageSize={10}>
           {list.map((o) => (
             <article key={o.id} className={cn("card card-pad", o.id === highlight && "ring-2 ring-brand-600")}>
               <div className="flex flex-wrap items-start justify-between gap-2">
@@ -121,7 +122,7 @@ export default async function OccurrencesPage({ searchParams }: { searchParams: 
               )}
             </article>
           ))}
-        </div>
+        </Paged>
       )}
     </>
   );

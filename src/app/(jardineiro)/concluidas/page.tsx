@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { CircleCheck } from "lucide-react";
 import { TypeIcon } from "@/components/icons";
+import { Paged } from "@/components/paged";
 import { EmptyState, StatusBadge } from "@/components/ui";
 import { myTasksWhere, requireUser } from "@/lib/auth";
 import { MAINTENANCE_TYPES, type MaintenanceType } from "@/lib/constants";
@@ -76,7 +77,7 @@ export default async function DoneTasksPage() {
             Quando a liderança aprovar seus serviços, eles aparecem aqui.
           </EmptyState>
         ) : (
-          <ul className="card divide-y divide-stone-100 p-1.5">{done.map((t) => row(t, t.approvedAt, t.approvedBy ? `aprovada por ${t.approvedBy.name}` : undefined))}</ul>
+          <Paged className="card divide-y divide-stone-100 p-1.5">{done.map((t) => row(t, t.approvedAt, t.approvedBy ? `aprovada por ${t.approvedBy.name}` : undefined))}</Paged>
         )}
       </section>
     </div>

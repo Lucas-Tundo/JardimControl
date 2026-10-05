@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { useEffect, useState, type ReactNode } from "react";
+import { useState, type ReactNode } from "react";
 import {
   BadgeCheck,
   Bell,
@@ -25,6 +25,7 @@ import {
   Users,
   X,
 } from "lucide-react";
+import { Dialog } from "./dialog";
 import { Logo, cn } from "./ui";
 import { logout } from "@/app/actions/auth";
 import { ROLES, type Role } from "@/lib/constants";
@@ -119,13 +120,6 @@ export function LeaderShell({
   const pathname = usePathname();
   const [open, setOpen] = useState(false);
 
-  useEffect(() => {
-    if (!open) return;
-    const onKey = (e: KeyboardEvent) => e.key === "Escape" && setOpen(false);
-    document.addEventListener("keydown", onKey);
-    return () => document.removeEventListener("keydown", onKey);
-  }, [open]);
-
   const nav = (
     <nav className="flex flex-col gap-0.5" aria-label="Menu principal">
       {LEADER_NAV.map((item) => {
@@ -183,21 +177,26 @@ export function LeaderShell({
         </div>
       </header>
 
-      {open && (
-        <div className="fixed inset-0 z-40 lg:hidden">
-          <div className="absolute inset-0 bg-[var(--ds-scrim)]" onClick={() => setOpen(false)} />
-          <div className="absolute inset-y-0 left-0 flex w-72 flex-col p-3 [&_:focus-visible]:outline-white" style={SIDEBAR_BG} role="dialog" aria-modal="true" aria-label="Menu">
-            <div className="mb-4 flex items-center justify-between pl-2">
-              <Logo light />
-              <button onClick={() => setOpen(false)} className="flex h-9 w-9 items-center justify-center rounded-[9px] text-white hover:bg-white/10" aria-label="Fechar menu">
-                <X className="h-5 w-5" />
-              </button>
-            </div>
-            <div className="flex-1 overflow-y-auto">{nav}</div>
-            <SidebarFooter user={user} />
+      <Dialog
+        open={open}
+        onClose={() => setOpen(false)}
+        title="Menu"
+        variant="drawer"
+        side="left"
+        bare
+        panelClassName="w-72 max-w-[85vw] bg-[linear-gradient(180deg,var(--ds-brand)_0%,var(--ds-tint-deep)_100%)] p-3 lg:hidden [&_:focus-visible]:outline-white"
+      >
+        <div className="flex h-full flex-col">
+          <div className="mb-4 flex items-center justify-between pl-2">
+            <Logo light />
+            <button onClick={() => setOpen(false)} className="flex h-9 w-9 items-center justify-center rounded-[9px] text-white hover:bg-white/10" aria-label="Fechar menu">
+              <X className="h-5 w-5" />
+            </button>
           </div>
+          <div className="flex-1 overflow-y-auto">{nav}</div>
+          <SidebarFooter user={user} />
         </div>
-      )}
+      </Dialog>
 
       <main className="mx-auto max-w-7xl px-4 pb-28 pt-6 lg:px-8 lg:pb-10">{children}</main>
 

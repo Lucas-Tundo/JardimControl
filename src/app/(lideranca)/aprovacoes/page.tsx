@@ -5,6 +5,7 @@ import { formatDateTime, formatDuration } from "@/lib/dates";
 import { photoUrl } from "@/lib/files";
 import { assigneeName, taskCode } from "@/lib/tasks";
 import { AutoRefresh } from "@/components/auto-refresh";
+import { Paged } from "@/components/paged";
 import { EmptyState, PageHeader, PriorityBadge, TypeLabel } from "@/components/ui";
 
 export const metadata = { title: "Aprovações" };
@@ -31,7 +32,7 @@ export default async function ApprovalsPage() {
           Quando um jardineiro finalizar uma tarefa, ela aparecerá aqui.
         </EmptyState>
       ) : (
-        <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+        <Paged as="div" className="grid gap-4 md:grid-cols-2 xl:grid-cols-3" pageSize={10}>
           {tasks.map((t) => {
             const before = t.photos.find((p) => p.stage === "ANTES") ?? t.location.photos[0];
             const after = [...t.photos].reverse().find((p) => p.stage === "DEPOIS");
@@ -74,7 +75,7 @@ export default async function ApprovalsPage() {
               </Link>
             );
           })}
-        </div>
+        </Paged>
       )}
     </>
   );

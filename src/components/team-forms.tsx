@@ -4,7 +4,7 @@ import { useRouter } from "next/navigation";
 import { useState, useTransition } from "react";
 import { saveTeam, saveUser, toggleUserActive } from "@/app/actions/admin";
 import { ROLES } from "@/lib/constants";
-import { Dialog } from "./dialog";
+import { Dialog, ModalFooter, useConfirm } from "./dialog";
 import { useToast } from "./toast";
 
 type Option = { id: string; name: string };
@@ -31,7 +31,14 @@ export function UserDialogButton({ initial, teams, label, className }: { initial
       <button type="button" className={className ?? "btn-primary"} onClick={() => setOpen(true)}>
         {label}
       </button>
-      <Dialog open={open} onClose={() => setOpen(false)} title={initial ? "Editar usuário" : "Novo usuário"}>
+      <Dialog
+        open={open}
+        onClose={() => setOpen(false)}
+        closeOnBackdrop={!pending}
+        kicker="Equipe e usuários"
+        title={initial ? "Editar usuário" : "Novo usuário"}
+        description={initial ? "A senha só muda se você digitar uma nova." : "O login e a senha são usados para entrar no sistema."}
+      >
         <form action={submit} className="space-y-3">
           <div>
             <label className="label">Nome completo</label>
@@ -78,14 +85,14 @@ export function UserDialogButton({ initial, teams, label, className }: { initial
               </div>
             </fieldset>
           )}
-          <div className="flex justify-end gap-2 pt-2">
+          <ModalFooter>
             <button type="button" className="btn-secondary" onClick={() => setOpen(false)}>
               Cancelar
             </button>
             <button className="btn-primary" disabled={pending}>
               {pending ? "Salvando…" : "Salvar"}
             </button>
-          </div>
+          </ModalFooter>
         </form>
       </Dialog>
     </>
@@ -96,13 +103,14 @@ export function ToggleUserButton({ id, active }: { id: string; active: boolean }
   const router = useRouter();
   const toast = useToast();
   const [pending, start] = useTransition();
+  const confirm = useConfirm();
   return (
     <button
       type="button"
       className={`btn-ghost min-h-9 px-3 text-sm ${active ? "text-red-600" : "text-brand-700"}`}
       disabled={pending}
-      onClick={() => {
-        if (active && !confirm("Desativar este usuário? Ele não conseguirá mais entrar no sistema.")) return;
+      onClick={async () => {
+        if (active && !(await confirm({ title: "Desativar este usuário?", description: "Ele não conseguirá mais entrar no sistema. O histórico continua guardado.", confirmLabel: "Desativar" }))) return;
         start(async () => {
           const r = await toggleUserActive(id);
           if (!r.ok) return toast.show(r.error, "error");
@@ -137,7 +145,14 @@ export function TeamDialogButton({ initial, users, label, className }: { initial
       <button type="button" className={className ?? "btn-primary"} onClick={() => setOpen(true)}>
         {label}
       </button>
-      <Dialog open={open} onClose={() => setOpen(false)} title={initial ? "Editar equipe" : "Nova equipe"}>
+      <Dialog
+        open={open}
+        onClose={() => setOpen(false)}
+        closeOnBackdrop={!pending}
+        kicker="Equipe e usuários"
+        title={initial ? "Editar equipe" : "Nova equipe"}
+        description="Equipes agrupam jardineiros para receber tarefas em conjunto."
+      >
         <form action={submit} className="space-y-3">
           <div className="grid grid-cols-[1fr_auto] gap-3">
             <div>
@@ -164,14 +179,14 @@ export function TeamDialogButton({ initial, users, label, className }: { initial
               ))}
             </div>
           </fieldset>
-          <div className="flex justify-end gap-2 pt-2">
+          <ModalFooter>
             <button type="button" className="btn-secondary" onClick={() => setOpen(false)}>
               Cancelar
             </button>
             <button className="btn-primary" disabled={pending}>
               {pending ? "Salvando…" : "Salvar"}
             </button>
-          </div>
+          </ModalFooter>
         </form>
       </Dialog>
     </>

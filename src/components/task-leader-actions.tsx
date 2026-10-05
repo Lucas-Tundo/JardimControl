@@ -6,7 +6,7 @@ import { useState, useTransition } from "react";
 import { Camera, Check, CircleCheck, Pencil, Trash2, TriangleAlert, Undo2, XCircle } from "lucide-react";
 import { addReferencePhotos, cancelTask, deleteTask } from "@/app/actions/tasks";
 import { approveTask, returnTask } from "@/app/actions/execution";
-import { Dialog } from "./dialog";
+import { Dialog, ModalFooter } from "./dialog";
 import { PendingPhotos, PhotoPicker } from "./photos";
 import { useToast } from "./toast";
 
@@ -58,36 +58,63 @@ export function TaskLeaderActions({ taskId, status, isAdmin }: { taskId: string;
         <Trash2 /> Excluir
       </button>
 
-      <Dialog open={dialog === "photos"} onClose={close} title="Enviar fotos de referência">
-        <p className="mb-3 text-sm text-stone-600">As fotos entram como referência de antes e o responsável recebe um aviso.</p>
+      <Dialog
+        open={dialog === "photos"}
+        onClose={close}
+        closeOnBackdrop={!pending}
+        kicker="Tarefa"
+        title="Enviar fotos de referência"
+        description="As fotos entram como referência de antes e o responsável recebe um aviso."
+        footer={
+          <>
+            <button type="button" className="btn-secondary" onClick={close}>
+              Fechar
+            </button>
+            <button
+              className="btn-primary"
+              disabled={pending || !files.length}
+              onClick={() =>
+                run(() => {
+                  const fd = new FormData();
+                  files.forEach((f) => fd.append("photos", f));
+                  return addReferencePhotos(taskId, fd);
+                })
+              }
+            >
+              {pending ? "Enviando…" : files.length === 0 ? "Enviar fotos" : files.length === 1 ? "Enviar 1 foto" : `Enviar ${files.length} fotos`}
+            </button>
+          </>
+        }
+      >
         <PendingPhotos files={files} onRemove={(i) => setFiles((f) => f.filter((_, idx) => idx !== i))} />
         <div className="mt-3">
           <PhotoPicker onFiles={(f) => setFiles((p) => [...p, ...f])} label="Tirar foto" />
         </div>
-        <button
-          className="btn-primary mt-4 w-full"
-          disabled={pending || !files.length}
-          onClick={() =>
-            run(() => {
-              const fd = new FormData();
-              files.forEach((f) => fd.append("photos", f));
-              return addReferencePhotos(taskId, fd);
-            })
-          }
-        >
-          {files.length === 0 ? "Enviar fotos" : files.length === 1 ? "Enviar 1 foto" : `Enviar ${files.length} fotos`}
-        </button>
       </Dialog>
 
-      <Dialog open={dialog === "cancel"} onClose={close} title="Cancelar tarefa">
+      <Dialog
+        open={dialog === "cancel"}
+        onClose={close}
+        closeOnBackdrop={!pending}
+        kicker="Tarefa"
+        title="Cancelar tarefa"
+        description="A tarefa sai da agenda do responsável. O motivo fica registrado no histórico."
+        footer={
+          <>
+            <button type="button" className="btn-secondary" onClick={close}>
+              Voltar
+            </button>
+            <button className="btn-danger" disabled={pending || !reason.trim()} onClick={() => run(() => cancelTask(taskId, reason))}>
+              {pending ? "Cancelando…" : "Confirmar cancelamento"}
+            </button>
+          </>
+        }
+      >
         <label className="label">Motivo do cancelamento *</label>
         <textarea className="input min-h-24" value={reason} onChange={(e) => setReason(e.target.value)} />
-        <button className="btn-danger mt-4 w-full" disabled={pending || !reason.trim()} onClick={() => run(() => cancelTask(taskId, reason))}>
-          Confirmar cancelamento
-        </button>
       </Dialog>
 
-      <Dialog open={dialog === "delete"} onClose={close} title="Excluir tarefa">
+      <Dialog open={dialog === "delete"} onClose={close} closeOnBackdrop={!pending} kicker="Tarefa" title="Excluir tarefa">
         {status === "CONCLUIDA" && !isAdmin ? (
           <p className="rounded-[10px] bg-amber-50 p-3 text-sm text-amber-900">
             Esta manutenção já foi concluída. A exclusão definitiva de registros concluídos exige autorização de um <strong>Administrador</strong>.
@@ -112,13 +139,18 @@ export function TaskLeaderActions({ taskId, status, isAdmin }: { taskId: string;
                 <input type="password" className="input" value={password} onChange={(e) => setPassword(e.target.value)} autoComplete="current-password" />
               </div>
             )}
-            <button
-              className="btn-danger w-full"
-              disabled={pending || !reason.trim() || (status === "CONCLUIDA" && !password)}
-              onClick={() => run(() => deleteTask(taskId, reason, password || undefined), () => router.push("/tarefas"))}
-            >
-              Excluir
-            </button>
+            <ModalFooter>
+              <button type="button" className="btn-secondary" onClick={close}>
+                Voltar
+              </button>
+              <button
+                className="btn-danger"
+                disabled={pending || !reason.trim() || (status === "CONCLUIDA" && !password)}
+                onClick={() => run(() => deleteTask(taskId, reason, password || undefined), () => router.push("/tarefas"))}
+              >
+                {pending ? "Excluindo…" : "Excluir tarefa"}
+              </button>
+            </ModalFooter>
           </div>
         )}
       </Dialog>
@@ -142,7 +174,7 @@ export function ApprovalPanel({ taskId, pendingRequired, afterPhotos }: { taskId
     });
 
   return (
-    <div className="card card-pad shadow-[inset_0_0_0_1.5px_theme(colors.violet.300),var(--ds-shadow-1)]">
+    <div className="card card-pad shadow-[inset_0_0_0_1.5px_theme(colors.cyan.300),var(--ds-shadow-1)]">
       <h2 className="section-title">Serviço aguardando sua aprovação</h2>
       <p className="mt-1 text-sm text-stone-600">Compare as fotos de antes e depois e confira o checklist antes de decidir.</p>
       <ul className="mt-3 space-y-1.5 text-sm">

@@ -27,7 +27,7 @@ function groupRows(rows: ReportGroupRow[]) {
   return rows.map((r) => [pdfText(r.label), r.total, r.done, r.open, r.late, formatDuration(r.avgMinutes), formatDuration(r.minutes)]);
 }
 
-export function buildReportPdf(data: ReportData, userName: string): Buffer {
+export function buildReportPdf(data: ReportData, userName: string): Uint8Array {
   const doc = new jsPDF({ orientation: "landscape", unit: "mm", format: "a4" });
   const W = doc.internal.pageSize.getWidth();
   const now = data.generatedAt;
@@ -153,7 +153,7 @@ export function buildReportPdf(data: ReportData, userName: string): Buffer {
     doc.setTextColor(140, 140, 140);
     doc.text(`Jardim Control  -  página ${p} de ${pages}`, W / 2, doc.internal.pageSize.getHeight() - 6, { align: "center" });
   }
-  return Buffer.from(doc.output("arraybuffer"));
+  return new Uint8Array(doc.output("arraybuffer"));
 }
 
 function styleHeader(ws: ExcelJS.Worksheet, filter = true) {
@@ -181,7 +181,7 @@ function groupSheet(wb: ExcelJS.Workbook, name: string, label: string, rows: Rep
   styleHeader(ws);
 }
 
-export async function buildReportXlsx(data: ReportData, userName: string): Promise<Buffer> {
+export async function buildReportXlsx(data: ReportData, userName: string): Promise<Uint8Array> {
   const wb = new ExcelJS.Workbook();
   wb.creator = "Jardim Control";
   wb.created = data.generatedAt;
@@ -290,8 +290,7 @@ export async function buildReportXlsx(data: ReportData, userName: string): Promi
   );
   styleHeader(occ);
 
-  const buf = await wb.xlsx.writeBuffer();
-  return Buffer.from(buf as ArrayBuffer);
+  return new Uint8Array(await wb.xlsx.writeBuffer());
 }
 
 export function reportFileName(ext: "pdf" | "xlsx", now = new Date()): string {

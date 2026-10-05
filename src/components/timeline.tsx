@@ -32,7 +32,7 @@ const ACTION_ICON: Record<string, { icon: LucideIcon; tone?: string }> = {
   FOTOS: { icon: Camera },
   FOTOS_REFERENCIA: { icon: Camera },
   FOTO_REMOVIDA: { icon: ImageOff },
-  ENVIADA_APROVACAO: { icon: Send, tone: "text-violet-600" },
+  ENVIADA_APROVACAO: { icon: Send, tone: "text-cyan-700" },
   APROVADA: { icon: CircleCheck, tone: "text-green-700" },
   DEVOLVIDA: { icon: Undo2, tone: "text-amber-700" },
   CANCELADA: { icon: Ban, tone: "text-stone-500" },

@@ -1,6 +1,7 @@
 import type { Prisma } from "@prisma/client";
 import Link from "next/link";
 import { ChevronLeft, ChevronRight, History } from "lucide-react";
+import { PageControls } from "@/components/paged";
 import { EmptyState, PageHeader, Section } from "@/components/ui";
 import { endOfDay, formatDateTime, fromLocal } from "@/lib/dates";
 import { db } from "@/lib/db";
@@ -22,7 +23,7 @@ const ENTITIES: Record<string, string> = {
   REPORT: "Relatórios",
 };
 
-const PAGE_SIZE = 50;
+const PAGE_SIZE = 30;
 
 const ACTION_LABELS: Record<string, string> = {
   ENVIADA_APROVACAO: "Enviada para aprovação",
@@ -71,7 +72,7 @@ export default async function AuditPage({ searchParams }: { searchParams: Promis
     ...(entity ? { entityType: entity } : {}),
     ...(userId ? { userId } : {}),
     ...(de || ate ? { createdAt: { ...(de ? { gte: fromLocal(de) } : {}), ...(ate ? { lte: endOfDay(fromLocal(ate)) } : {}) } } : {}),
-    ...(q ? { OR: [{ summary: { contains: q } }, { action: { contains: q.toUpperCase() } }] } : {}),
+    ...(q ? { OR: [{ summary: { contains: q, mode: "insensitive" } }, { action: { contains: q.replace(/\s+/g, "_"), mode: "insensitive" } }] } : {}),
   };
 
   const [logs, total, users] = await Promise.all([
@@ -179,25 +180,33 @@ export default async function AuditPage({ searchParams }: { searchParams: Promis
           </ul>
         )}
         {pages > 1 && (
-          <div className="mt-4 flex items-center justify-between text-sm">
-            {page > 1 ? (
-              <Link href={qs(page - 1)} className="btn-secondary">
-                <ChevronLeft /> Anteriores
-              </Link>
-            ) : (
-              <span />
-            )}
-            <span className="text-stone-500">
-              Página {page} de {pages}
-            </span>
-            {page < pages ? (
-              <Link href={qs(page + 1)} className="btn-secondary">
-                Próximos <ChevronRight />
-              </Link>
-            ) : (
-              <span />
-            )}
-          </div>
+          <PageControls
+            from={(page - 1) * PAGE_SIZE + 1}
+            to={Math.min(total, page * PAGE_SIZE)}
+            total={total}
+            prev={
+              page > 1 ? (
+                <Link href={qs(page - 1)} className="btn-secondary">
+                  <ChevronLeft /> Anterior
+                </Link>
+              ) : (
+                <button type="button" className="btn-secondary" disabled>
+                  <ChevronLeft /> Anterior
+                </button>
+              )
+            }
+            next={
+              page < pages ? (
+                <Link href={qs(page + 1)} className="btn-secondary">
+                  Próxima <ChevronRight />
+                </Link>
+              ) : (
+                <button type="button" className="btn-secondary" disabled>
+                  Próxima <ChevronRight />
+                </button>
+              )
+            }
+          />
         )}
       </Section>
     </div>

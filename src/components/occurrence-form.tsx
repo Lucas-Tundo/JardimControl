@@ -133,24 +133,39 @@ export function ResolveOccurrenceButton({ id }: { id: string }) {
       <button className="btn-secondary min-h-9 px-3 text-sm" onClick={() => setOpen(true)}>
         Encerrar
       </button>
-      <Dialog open={open} onClose={() => setOpen(false)} title="Encerrar ocorrência">
-        <p className="mb-2 text-sm text-stone-600">Use quando o problema foi resolvido sem necessidade de uma tarefa.</p>
-        <textarea className="input min-h-20" placeholder="Como foi resolvido? (opcional)" value={notes} onChange={(e) => setNotes(e.target.value)} />
-        <button
-          className="btn-primary mt-3 w-full"
-          disabled={pending}
-          onClick={() =>
-            start(async () => {
-              const r = await resolveOccurrence(id, notes);
-              if (!r.ok) return toast.show(r.error, "error");
-              toast.show(r.message ?? "Encerrada.");
-              setOpen(false);
-              router.refresh();
-            })
-          }
-        >
-          Encerrar ocorrência
-        </button>
+      <Dialog
+        open={open}
+        onClose={() => setOpen(false)}
+        closeOnBackdrop={!pending}
+        size="sm"
+        kicker="Ocorrência"
+        title="Encerrar ocorrência"
+        description="Use quando o problema foi resolvido sem necessidade de uma tarefa."
+        footer={
+          <>
+            <button type="button" className="btn-secondary" onClick={() => setOpen(false)}>
+              Cancelar
+            </button>
+            <button
+              className="btn-primary"
+              disabled={pending}
+              onClick={() =>
+                start(async () => {
+                  const r = await resolveOccurrence(id, notes);
+                  if (!r.ok) return toast.show(r.error, "error");
+                  toast.show(r.message ?? "Encerrada.");
+                  setOpen(false);
+                  router.refresh();
+                })
+              }
+            >
+              {pending ? "Encerrando…" : "Encerrar ocorrência"}
+            </button>
+          </>
+        }
+      >
+        <label className="label">Como foi resolvido? (opcional)</label>
+        <textarea className="input min-h-20" value={notes} onChange={(e) => setNotes(e.target.value)} />
       </Dialog>
     </>
   );

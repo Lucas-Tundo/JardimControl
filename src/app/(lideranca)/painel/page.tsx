@@ -86,7 +86,7 @@ export default async function DashboardPage({ searchParams }: { searchParams: Pr
         <StatCard label="Em andamento" value={inProgress} icon={CircleDot} tone="orange" hint={ofOpen(inProgress)} href="/tarefas?status=EM_ANDAMENTO" />
         <StatCard label="Concluídas" value={done} icon={CircleCheck} tone="green" hint={hasPeriod ? "No período filtrado" : "Aprovadas neste mês"} href="/tarefas?status=CONCLUIDA" />
         <StatCard label="Atrasadas" value={late} icon={TriangleAlert} tone="red" hint={ofOpen(late)} href="/tarefas?status=ATRASADA" />
-        <StatCard label="Aguardando aprovação" value={awaiting} icon={Hourglass} tone="purple" hint={awaiting ? "Revise e aprove" : "Nada pendente"} href="/aprovacoes" />
+        <StatCard label="Aguardando aprovação" value={awaiting} icon={Hourglass} tone="cyan" hint={awaiting ? "Revise e aprove" : "Nada pendente"} href="/aprovacoes" />
         <StatCard label="Ocorrências abertas" value={openOcc} icon={CircleAlert} tone="stone" hint={openOcc ? "Precisam de destino" : "Nenhuma aberta"} href="/ocorrencias" />
       </div>
 

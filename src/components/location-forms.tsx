@@ -5,7 +5,7 @@ import { useState, useTransition } from "react";
 import { addLocationPhotos, deleteArea, regenerateQrCode, saveArea, saveLocation, toggleLocationActive } from "@/app/actions/locations";
 import { PERIODICITIES } from "@/lib/constants";
 import type { FormOptions } from "@/lib/queries";
-import { Dialog } from "./dialog";
+import { Dialog, ModalFooter, useConfirm } from "./dialog";
 import { PendingPhotos, PhotoPicker } from "./photos";
 import { AssigneeSelect } from "./task-form";
 import { useToast } from "./toast";
@@ -152,12 +152,20 @@ export function AreaDialogButton({ initial, label, className = "btn-secondary" }
   const [pending, start] = useTransition();
   const router = useRouter();
   const toast = useToast();
+  const confirm = useConfirm();
   return (
     <>
       <button className={className} onClick={() => setOpen(true)}>
         {label}
       </button>
-      <Dialog open={open} onClose={() => setOpen(false)} title={initial?.id ? "Editar área" : "Nova área"}>
+      <Dialog
+        open={open}
+        onClose={() => setOpen(false)}
+        closeOnBackdrop={!pending}
+        kicker="Áreas e locais"
+        title={initial?.id ? "Editar área" : "Nova área"}
+        description="A área agrupa locais e aparece como setor na planta da empresa."
+      >
         <form
           className="space-y-3"
           onSubmit={(e) => {
@@ -206,28 +214,33 @@ export function AreaDialogButton({ initial, label, className = "btn-secondary" }
               ))}
             </div>
           </fieldset>
-          <div className="flex gap-2">
-            <button className="btn-primary flex-1" disabled={pending}>Salvar área</button>
+          <ModalFooter>
             {initial?.id && (
               <button
                 type="button"
-                className="btn-ghost text-red-600"
+                className="btn-ghost mr-auto text-[var(--ds-red)]"
                 disabled={pending}
-                onClick={() =>
-                  confirm("Excluir esta área?") &&
+                onClick={async () => {
+                  if (!(await confirm({ title: "Excluir esta área?", description: "Os locais da área precisam ser movidos ou excluídos antes.", confirmLabel: "Excluir" }))) return;
                   start(async () => {
                     const r = await deleteArea(initial.id!);
                     if (!r.ok) return toast.show(r.error, "error");
                     toast.show("Área excluída.");
                     setOpen(false);
                     router.refresh();
-                  })
-                }
+                  });
+                }}
               >
                 Excluir
               </button>
             )}
-          </div>
+            <button type="button" className="btn-secondary" onClick={() => setOpen(false)}>
+              Cancelar
+            </button>
+            <button className="btn-primary" disabled={pending}>
+              {pending ? "Salvando…" : "Salvar área"}
+            </button>
+          </ModalFooter>
         </form>
       </Dialog>
     </>
@@ -274,20 +287,21 @@ export function QrAdminButtons({ locationId, active }: { locationId: string; act
   const [pending, start] = useTransition();
   const router = useRouter();
   const toast = useToast();
+  const confirm = useConfirm();
   return (
     <div className="flex flex-wrap gap-2">
       <button
         className="btn-ghost text-sm"
         disabled={pending}
-        onClick={() =>
-          confirm("Gerar um novo QR Code? O código impresso atual deixará de funcionar.") &&
+        onClick={async () => {
+          if (!(await confirm({ title: "Gerar um novo QR Code?", description: "O código impresso atual deixará de funcionar.", confirmLabel: "Gerar novo" }))) return;
           start(async () => {
             const r = await regenerateQrCode(locationId);
             if (!r.ok) return toast.show(r.error, "error");
             toast.show(r.message ?? "Gerado.");
             router.refresh();
-          })
-        }
+          });
+        }}
       >
         Regenerar QR
       </button>

@@ -1,10 +1,11 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
-  serverExternalPackages: ["exceljs", "jspdf", "jspdf-autotable", "qrcode"],
+  serverExternalPackages: ["@prisma/client", ".prisma/client", "qrcode"],
   experimental: {
     serverActions: {
-      bodySizeLimit: "40mb",
+      // A Vercel recusa requisições acima de 4,5 MB.
+      bodySizeLimit: "4mb",
     },
   },
 };

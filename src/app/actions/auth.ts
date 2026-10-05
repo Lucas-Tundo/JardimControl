@@ -4,6 +4,7 @@ import bcrypt from "bcryptjs";
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 import { db } from "@/lib/db";
+import { getOrigin } from "@/lib/origin";
 import { createToken, SESSION_COOKIE, SESSION_DAYS } from "@/lib/session";
 import { fail, str, type ActionResult } from "@/lib/action-utils";
 
@@ -21,6 +22,7 @@ export async function login(_prev: ActionResult | null, form: FormData): Promise
   const store = await cookies();
   store.set(SESSION_COOKIE, createToken(user.id), {
     httpOnly: true,
+    secure: (await getOrigin()).startsWith("https://"),
     sameSite: "lax",
     path: "/",
     maxAge: SESSION_DAYS * 24 * 60 * 60,

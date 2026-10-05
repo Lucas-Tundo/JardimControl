@@ -1,5 +1,6 @@
 import type { Metadata, Viewport } from "next";
 import "./globals.css";
+import { ConfirmProvider } from "@/components/dialog";
 import { ToastProvider } from "@/components/toast";
 
 export const metadata: Metadata = {
@@ -11,7 +12,7 @@ export const metadata: Metadata = {
 };
 
 export const viewport: Viewport = {
-  themeColor: "#15803d",
+  themeColor: "#1f6b45",
   width: "device-width",
   initialScale: 1,
   viewportFit: "cover",
@@ -20,8 +21,10 @@ export const viewport: Viewport = {
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="pt-BR">
-      <body>
-        <ToastProvider>{children}</ToastProvider>
+      <body data-ds="">
+        <ToastProvider>
+          <ConfirmProvider>{children}</ConfirmProvider>
+        </ToastProvider>
       </body>
     </html>
   );

@@ -4,7 +4,10 @@ export const SESSION_COOKIE = "jc_session";
 export const SESSION_DAYS = 30;
 
 function secret(): string {
-  return process.env.SESSION_SECRET || "jardim-control-dev-secret";
+  const value = process.env.SESSION_SECRET;
+  if (value) return value;
+  if (process.env.NODE_ENV === "production") throw new Error("SESSION_SECRET não configurado.");
+  return "jardim-control-dev-secret";
 }
 
 function sign(payload: string): string {

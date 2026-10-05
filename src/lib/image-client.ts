@@ -1,5 +1,8 @@
-/** Reduz fotos do celular antes do envio (economiza dados em campo). */
-export async function compressImage(file: File, maxSide = 1600, quality = 0.8): Promise<File> {
+/**
+ * Reduz fotos do celular antes do envio (economiza dados em campo).
+ * A hospedagem aceita no máximo 4,5 MB por requisição; com estes valores cada foto fica em ~200 KB.
+ */
+export async function compressImage(file: File, maxSide = 1280, quality = 0.75): Promise<File> {
   if (!file.type.startsWith("image/") || file.type === "image/gif") return file;
   try {
     const bitmap = await createImageBitmap(file);

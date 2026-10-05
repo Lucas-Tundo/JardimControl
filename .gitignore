@@ -9,3 +9,8 @@ prisma/*.db-journal
 uploads/
 .shots/
 .playwright-mcp/
+
+.prod-credentials.txt
+.env*.local
+.vercel
+.env*

@@ -175,6 +175,43 @@ h2 {
   color: var(--ds-label-4);
 }
 
+/* Camadas: modal sobe 8 px, drawer entra 12 px pela lateral */
+@keyframes ds-fade {
+  from {
+    opacity: 0;
+  }
+}
+@keyframes ds-rise {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+}
+@keyframes ds-from-right {
+  from {
+    opacity: 0;
+    transform: translateX(12px);
+  }
+}
+@keyframes ds-from-left {
+  from {
+    opacity: 0;
+    transform: translateX(-12px);
+  }
+}
+.ds-scrim {
+  animation: ds-fade var(--ds-dur-2) var(--ds-ease-out);
+}
+.ds-dialog {
+  animation: ds-rise var(--ds-dur-2) var(--ds-ease-out);
+}
+.ds-drawer-right {
+  animation: ds-from-right var(--ds-dur-3) var(--ds-ease-out);
+}
+.ds-drawer-left {
+  animation: ds-from-left var(--ds-dur-3) var(--ds-ease-out);
+}
+
 @media (prefers-reduced-motion: reduce) {
   *,
   *::before,
@@ -377,10 +414,20 @@ h2 {
   font: var(--ds-text-caption);
   white-space: nowrap;
 }
+/* Régua do UX-AUDIT: título de cartão 20 px, título de seção 24 px, subtítulo 16 px */
 @utility section-title {
-  font: var(--ds-text-title-sm);
+  font: 600 20px/1.3 var(--ds-font);
   letter-spacing: var(--ds-tracking-title);
   color: var(--ds-label);
+}
+@utility group-title {
+  font: 700 24px/1.25 var(--ds-font);
+  letter-spacing: var(--ds-tracking-title);
+  color: var(--ds-label);
+}
+@utility subtitle {
+  font: 400 16px/1.45 var(--ds-font);
+  color: var(--ds-label-2);
 }
 @utility kicker {
   font: var(--ds-text-caption);

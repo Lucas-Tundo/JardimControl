@@ -42,7 +42,7 @@ export default async function TasksPage({ searchParams }: { searchParams: Promis
       />
       <FilterBar fields={["q", "periodo", "responsavel", "equipe", "area", "local", "tipo", "status", "prioridade"]} users={options.users} teams={options.teams} areas={options.areas} locations={options.locations} />
       <div className="card card-pad">
-        <TaskTable tasks={tasks} />
+        <TaskTable tasks={tasks} stickyHead />
         {pages > 1 && (
           <div className="mt-4 flex items-center justify-center gap-2.5 text-sm">
             {page > 1 && <Link className="btn-secondary" href={link(page - 1)}><ChevronLeft /> Anterior</Link>}

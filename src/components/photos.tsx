@@ -3,7 +3,7 @@
 import { useRef, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { Camera, ChevronLeft, ChevronRight, Trash2, X } from "lucide-react";
-import { Dialog } from "./dialog";
+import { Dialog, useConfirm } from "./dialog";
 import { useToast } from "./toast";
 import { compressAll } from "@/lib/image-client";
 import { formatDate, formatTime } from "@/lib/dates";
@@ -80,11 +80,12 @@ export function PhotoGallery({
   const [pending, start] = useTransition();
   const router = useRouter();
   const toast = useToast();
+  const confirm = useConfirm();
   if (!photos.length) return <p className="text-sm text-stone-500">{emptyText}</p>;
   const current = open !== null ? photos[open] : null;
 
-  const remove = (id: string) => {
-    if (!confirm("Remover esta foto?")) return;
+  const remove = async (id: string) => {
+    if (!(await confirm({ title: "Remover esta foto?", description: "A remoção fica registrada no histórico.", confirmLabel: "Remover" }))) return;
     start(async () => {
       const r = await deletePhoto(id);
       if (!r.ok) return toast.show(r.error, "error");
@@ -110,7 +111,13 @@ export function PhotoGallery({
           </button>
         ))}
       </div>
-      <Dialog open={!!current} onClose={() => setOpen(null)} title={current ? <StageTag stage={current.stage} solid /> : ""} wide>
+      <Dialog
+        open={!!current}
+        onClose={() => setOpen(null)}
+        size="md"
+        kicker={current ? `Foto ${(open ?? 0) + 1} de ${photos.length}` : undefined}
+        title={current ? <StageTag stage={current.stage} solid /> : ""}
+      >
         {current && (
           <div className="space-y-4">
             {/* eslint-disable-next-line @next/next/no-img-element */}

@@ -4,7 +4,7 @@ import { useRouter } from "next/navigation";
 import { useState, useTransition } from "react";
 import { saveSchedule } from "@/app/actions/recurrences";
 import { dateKey } from "@/lib/dates";
-import { Dialog } from "./dialog";
+import { Dialog, ModalFooter } from "./dialog";
 import { useToast } from "./toast";
 
 export function NewScheduleButton() {
@@ -17,7 +17,14 @@ export function NewScheduleButton() {
       <button className="btn-secondary" onClick={() => setOpen(true)}>
         Novo cronograma
       </button>
-      <Dialog open={open} onClose={() => setOpen(false)} title="Novo cronograma">
+      <Dialog
+        open={open}
+        onClose={() => setOpen(false)}
+        closeOnBackdrop={!pending}
+        kicker="Cronograma"
+        title="Novo cronograma"
+        description="Agrupe tarefas e recorrentes em um plano (ex.: “Cronograma de verão 2026”). Depois vincule as tarefas a ele no cadastro."
+      >
         <form
           className="space-y-3"
           onSubmit={(e) => {
@@ -32,7 +39,6 @@ export function NewScheduleButton() {
             });
           }}
         >
-          <p className="text-sm text-stone-600">Agrupe tarefas e manutenções recorrentes em um plano (ex.: “Cronograma de verão 2026”). Depois vincule as tarefas a ele no cadastro.</p>
           <div>
             <label className="label">Nome *</label>
             <input name="name" className="input" required />
@@ -51,9 +57,14 @@ export function NewScheduleButton() {
               <input name="endDate" type="date" className="input" />
             </div>
           </div>
-          <button className="btn-primary w-full" disabled={pending}>
-            Criar cronograma
-          </button>
+          <ModalFooter>
+            <button type="button" className="btn-secondary" onClick={() => setOpen(false)}>
+              Cancelar
+            </button>
+            <button className="btn-primary" disabled={pending}>
+              {pending ? "Criando…" : "Criar cronograma"}
+            </button>
+          </ModalFooter>
         </form>
       </Dialog>
     </>

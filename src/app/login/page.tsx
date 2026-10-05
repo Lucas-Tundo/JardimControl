@@ -23,15 +23,17 @@ export default async function LoginPage({ searchParams }: { searchParams: Promis
           <p className="mb-5 mt-1 text-sm text-stone-500">Use o usuário e a senha fornecidos pela liderança.</p>
           <LoginForm next={next ?? ""} />
         </div>
-        <div className="mt-4 rounded-[14px] bg-white/60 p-4 text-sm text-stone-600">
-          <p className="mb-1.5 font-medium text-stone-900">Acessos de demonstração</p>
-          <p>
-            Liderança: <code>admin</code> / <code>admin123</code> ou <code>lider</code> / <code>lider123</code>
-          </p>
-          <p className="mt-1">
-            Jardineiros: <code>joao</code>, <code>carlos</code>, <code>maria</code> ou <code>pedro</code> / <code>123456</code>
-          </p>
-        </div>
+        {process.env.SHOW_DEMO_LOGINS === "1" && (
+          <div className="mt-4 rounded-[14px] bg-white/60 p-4 text-sm text-stone-600">
+            <p className="mb-1.5 font-medium text-stone-900">Acessos de demonstração</p>
+            <p>
+              Liderança: <code>admin</code> / <code>admin123</code> ou <code>lider</code> / <code>lider123</code>
+            </p>
+            <p className="mt-1">
+              Jardineiros: <code>joao</code>, <code>carlos</code>, <code>maria</code> ou <code>pedro</code> / <code>123456</code>
+            </p>
+          </div>
+        )}
       </div>
     </div>
   );

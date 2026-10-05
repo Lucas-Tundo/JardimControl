@@ -2,6 +2,7 @@ import Link from "next/link";
 import { MAINTENANCE_TYPES, type MaintenanceType } from "@/lib/constants";
 import { addDays, dateKey, formatMonth, formatShortDate, formatTime, formatWeekdayShort, relativeDay, startOfMonth, startOfWeek } from "@/lib/dates";
 import { assigneeName, isLate, taskCode, type TaskListItem } from "@/lib/tasks";
+import { Paged } from "./paged";
 import { EmptyState, PriorityBadge, StatusBadge, StatusDot, TypeLabel, cn } from "./ui";
 import { plural } from "@/lib/text";
 
@@ -15,13 +16,25 @@ export function ChecklistProgress({ items }: { items: { done: boolean; required:
   );
 }
 
-export function TaskTable({ tasks, hrefBase = "/tarefas", empty = "Nenhuma tarefa encontrada." }: { tasks: TaskListItem[]; hrefBase?: string; empty?: string }) {
+export function TaskTable({
+  tasks,
+  hrefBase = "/tarefas",
+  empty = "Nenhuma tarefa encontrada.",
+  stickyHead = false,
+}: {
+  tasks: TaskListItem[];
+  hrefBase?: string;
+  empty?: string;
+  stickyHead?: boolean;
+}) {
   if (!tasks.length) return <EmptyState title={empty} />;
   return (
     <>
-      <div className="-mx-1 hidden overflow-x-auto md:block">
-        <table className="w-full text-sm">
-          <thead>
+      <div className="-mx-1 hidden md:block">
+        <Paged
+          stickyHead={stickyHead}
+          tableClassName={stickyHead ? undefined : "min-w-[760px]"}
+          head={
             <tr className="border-b border-stone-200 text-left text-xs text-stone-500">
               <th className="px-1 py-2 pr-3 font-medium">Tarefa</th>
               <th className="py-2 pr-3 font-medium">Local</th>
@@ -32,8 +45,8 @@ export function TaskTable({ tasks, hrefBase = "/tarefas", empty = "Nenhuma taref
               <th className="py-2 pr-3 font-medium">Status</th>
               <th className="py-2 font-medium">Checklist</th>
             </tr>
-          </thead>
-          <tbody>
+          }
+        >
             {tasks.map((t) => (
               <tr key={t.id} className="border-b border-stone-100 last:border-0 hover:bg-stone-50">
                 <td className="px-1 py-2.5 pr-3">
@@ -67,10 +80,10 @@ export function TaskTable({ tasks, hrefBase = "/tarefas", empty = "Nenhuma taref
                 </td>
               </tr>
             ))}
-          </tbody>
-        </table>
+        </Paged>
       </div>
-      <ul className="-mx-2 flex flex-col divide-y divide-stone-100 md:hidden">
+      <div className="-mx-2 md:hidden">
+      <Paged className="flex flex-col divide-y divide-stone-100">
         {tasks.map((t) => (
           <li key={t.id}>
             <Link href={`${hrefBase}/${t.id}`} className="block rounded-[10px] px-2 py-3 hover:bg-stone-50">
@@ -93,7 +106,8 @@ export function TaskTable({ tasks, hrefBase = "/tarefas", empty = "Nenhuma taref
             </Link>
           </li>
         ))}
-      </ul>
+      </Paged>
+      </div>
     </>
   );
 }

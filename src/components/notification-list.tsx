@@ -7,6 +7,7 @@ import { markAllNotificationsRead, markNotificationRead } from "@/app/actions/no
 import { NOTIFICATION_TYPES, type NotificationType } from "@/lib/constants";
 import { formatDateTime, relativeDay } from "@/lib/dates";
 import { NOTIFICATION_ICONS } from "./icons";
+import { Paged } from "./paged";
 import { cn } from "./ui";
 
 export type NotificationItem = {
@@ -24,7 +25,7 @@ const ICON_TONE: Partial<Record<NotificationType, string>> = {
   DEVOLVIDA: "bg-amber-50 text-amber-700",
   CONCLUIDA: "bg-green-50 text-green-700",
   NOVA_OCORRENCIA: "bg-orange-50 text-orange-700",
-  AGUARDANDO_APROVACAO: "bg-violet-50 text-violet-700",
+  AGUARDANDO_APROVACAO: "bg-cyan-50 text-cyan-700",
 };
 
 export function NotificationList({ items }: { items: NotificationItem[] }) {
@@ -49,7 +50,7 @@ export function NotificationList({ items }: { items: NotificationItem[] }) {
           </button>
         )}
       </div>
-      <ul className="card divide-y divide-stone-100 overflow-hidden">
+      <Paged className="card divide-y divide-stone-100 overflow-hidden">
         {items.map((n) => {
           const t = NOTIFICATION_TYPES[n.type as NotificationType];
           const Icon = NOTIFICATION_ICONS[n.type as NotificationType] ?? Bell;
@@ -71,7 +72,7 @@ export function NotificationList({ items }: { items: NotificationItem[] }) {
             </li>
           );
         })}
-      </ul>
+      </Paged>
     </div>
   );
 }

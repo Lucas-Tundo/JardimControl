@@ -5,7 +5,7 @@ import { useState, useTransition } from "react";
 import { deleteChecklistTemplate, saveChecklistTemplate } from "@/app/actions/admin";
 import { MAINTENANCE_TYPES } from "@/lib/constants";
 import { ChecklistEditor, type EditableItem } from "./checklist-editor";
-import { Dialog } from "./dialog";
+import { Dialog, ModalFooter, useConfirm } from "./dialog";
 import { useToast } from "./toast";
 
 type Template = { id: string; name: string; type: string | null; items: { text: string; required: boolean }[] };
@@ -14,6 +14,7 @@ export function ChecklistTemplateButton({ initial, label, className }: { initial
   const router = useRouter();
   const toast = useToast();
   const [pending, start] = useTransition();
+  const confirm = useConfirm();
   const [open, setOpen] = useState(false);
   const [name, setName] = useState(initial?.name ?? "");
   const [type, setType] = useState(initial?.type ?? "");
@@ -37,8 +38,8 @@ export function ChecklistTemplateButton({ initial, label, className }: { initial
       router.refresh();
     });
 
-  const remove = () => {
-    if (!initial || !confirm(`Excluir o checklist "${initial.name}"? Tarefas já criadas não são afetadas.`)) return;
+  const remove = async () => {
+    if (!initial || !(await confirm({ title: `Excluir o checklist "${initial.name}"?`, description: "Tarefas já criadas não são afetadas.", confirmLabel: "Excluir" }))) return;
     start(async () => {
       const r = await deleteChecklistTemplate(initial.id);
       if (!r.ok) return toast.show(r.error, "error");
@@ -53,7 +54,15 @@ export function ChecklistTemplateButton({ initial, label, className }: { initial
       <button type="button" className={className ?? "btn-primary"} onClick={() => setOpen(true)}>
         {label}
       </button>
-      <Dialog open={open} onClose={() => setOpen(false)} title={initial ? "Editar checklist padrão" : "Novo checklist padrão"} wide>
+      <Dialog
+        open={open}
+        onClose={() => setOpen(false)}
+        closeOnBackdrop={!pending}
+        size="md"
+        kicker="Checklists padrão"
+        title={initial ? "Editar checklist padrão" : "Novo checklist padrão"}
+        description="Os itens entram automaticamente nas novas tarefas do tipo escolhido."
+      >
         <div className="space-y-4">
           <div className="grid gap-3 sm:grid-cols-2">
             <div>
@@ -73,24 +82,20 @@ export function ChecklistTemplateButton({ initial, label, className }: { initial
             </div>
           </div>
           <ChecklistEditor items={items} onChange={setItems} templates={[]} />
-          <div className="flex flex-wrap justify-between gap-2">
-            {initial ? (
-              <button type="button" className="btn-ghost text-red-600" disabled={pending} onClick={remove}>
-                Excluir
-              </button>
-            ) : (
-              <span />
-            )}
-            <div className="flex gap-2">
-              <button type="button" className="btn-secondary" onClick={() => setOpen(false)}>
-                Cancelar
-              </button>
-              <button type="button" className="btn-primary" disabled={pending} onClick={save}>
-                {pending ? "Salvando…" : "Salvar checklist"}
-              </button>
-            </div>
-          </div>
         </div>
+        <ModalFooter>
+          {initial && (
+            <button type="button" className="btn-ghost mr-auto text-[var(--ds-red)]" disabled={pending} onClick={remove}>
+              Excluir
+            </button>
+          )}
+          <button type="button" className="btn-secondary" onClick={() => setOpen(false)}>
+            Cancelar
+          </button>
+          <button type="button" className="btn-primary" disabled={pending} onClick={save}>
+            {pending ? "Salvando…" : "Salvar checklist"}
+          </button>
+        </ModalFooter>
       </Dialog>
     </>
   );

@@ -33,7 +33,7 @@ export default async function GardenerTaskPage({ params }: { params: Promise<{ i
             {task.totalMinutes > 0 && <span className="chip bg-stone-100 tabular-nums text-stone-700">{formatDuration(task.totalMinutes)} de trabalho</span>}
           </div>
           {task.status === "AGUARDANDO_APROVACAO" && (
-            <p className="mt-3 rounded-[10px] bg-violet-50 p-3 text-sm text-violet-900">
+            <p className="mt-3 rounded-[10px] bg-cyan-50 p-3 text-sm text-cyan-900">
               Enviada em {formatDateTime(task.submittedAt)}. A liderança vai analisar e você recebe um aviso.
             </p>
           )}

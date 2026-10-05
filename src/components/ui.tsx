@@ -82,7 +82,7 @@ export function PageHeader({ title, subtitle, actions, back }: { title: ReactNod
       <div className="min-w-0">
         {back && <BackLink href={back} />}
         <h1 className="page-title">{title}</h1>
-        {subtitle && <p className="mt-1 text-sm text-stone-500">{subtitle}</p>}
+        {subtitle && <p className="subtitle mt-1">{subtitle}</p>}
       </div>
       {actions && <div className="flex flex-wrap gap-2.5">{actions}</div>}
     </div>
@@ -95,7 +95,7 @@ const STAT_TONES = {
   yellow: "text-amber-600",
   orange: "text-orange-600",
   red: "text-red-600",
-  purple: "text-violet-600",
+  cyan: "text-cyan-700",
   stone: "text-stone-500",
 } as const;
 
@@ -150,7 +150,7 @@ export function EmptyState({ icon: Icon = Leaf, title, children }: { icon?: Luci
 
 export function Section({ title, actions, children, className }: { title: ReactNode; actions?: ReactNode; children: ReactNode; className?: string }) {
   return (
-    <section className={cn("card card-pad", className)}>
+    <section className={cn("card card-pad min-w-0", className)}>
       <div className="mb-3 flex items-center justify-between gap-2.5">
         <h2 className="section-title">{title}</h2>
         {actions}

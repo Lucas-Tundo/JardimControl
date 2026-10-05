@@ -39,7 +39,9 @@ export function buildTaskWhere(sp: SearchParams): Prisma.TaskWhereInput {
   const q = param(sp, "q");
   if (q) {
     const n = Number(q.replace(/\D/g, ""));
-    and.push({ OR: [{ title: { contains: q } }, { location: { name: { contains: q } } }, ...(n ? [{ number: n }] : [])] });
+    and.push({
+      OR: [{ title: { contains: q, mode: "insensitive" } }, { location: { name: { contains: q, mode: "insensitive" } } }, ...(n ? [{ number: n }] : [])],
+    });
   }
   return { AND: and };
 }

@@ -1,8 +1,10 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
-import { CircleAlert, CircleCheck, CircleDot, ClipboardList, Clock, FileSpreadsheet, FileText, Hourglass, Timer, TriangleAlert } from "lucide-react";
+import { CircleAlert, CircleCheck, CircleDot, Clock, Hourglass, Timer, TriangleAlert } from "lucide-react";
 import { FilterBar } from "@/components/filters";
+import { Paged } from "@/components/paged";
 import { PrintButton } from "@/components/print-button";
+import { ReportExportButtons } from "@/components/report-export-buttons";
 import { PageHeader, Section, StatCard, StatusBadge, cn } from "@/components/ui";
 import { MAINTENANCE_TYPES, PRIORITIES, labelOf } from "@/lib/constants";
 import { dateKey, endOfMonth, formatDateTime, formatDuration, startOfMonth } from "@/lib/dates";
@@ -70,7 +72,6 @@ export default async function ReportsPage({ searchParams }: { searchParams: Prom
   const i = data.indicators;
   const exportQs = new URLSearchParams();
   for (const [k, v] of Object.entries(sp)) if (typeof v === "string" && v) exportQs.set(k, v);
-  const exportHref = (formato: string) => `/api/relatorios/export?${new URLSearchParams({ ...Object.fromEntries(exportQs), formato })}`;
   const statusTotal = Math.max(1, data.byStatus.reduce((s, x) => s + x.count, 0));
   const ofTotal = i.total ? `de ${i.total} tarefas` : "Sem dados";
 
@@ -83,12 +84,7 @@ export default async function ReportsPage({ searchParams }: { searchParams: Prom
           .join(" · ")}
         actions={
           <div className="no-print flex flex-wrap gap-2.5">
-            <a href={exportHref("pdf")} className="btn-primary">
-              <FileText /> Exportar PDF
-            </a>
-            <a href={exportHref("xlsx")} className="btn-secondary">
-              <FileSpreadsheet /> Exportar Excel
-            </a>
+            <ReportExportButtons query={exportQs.toString()} />
             <PrintButton />
           </div>
         }
@@ -103,11 +99,10 @@ export default async function ReportsPage({ searchParams }: { searchParams: Prom
         <StatCard label="Pendentes" value={i.pendentes} icon={Clock} tone="yellow" hint={ofTotal} />
         <StatCard label="Atrasadas" value={i.atrasadas} icon={TriangleAlert} tone="red" hint={ofTotal} />
         <StatCard label="Em andamento" value={i.emAndamento} icon={CircleDot} tone="orange" hint={ofTotal} />
-        <StatCard label="Aguardando aprovação" value={i.aguardando} icon={Hourglass} tone="purple" hint={ofTotal} />
+        <StatCard label="Aguardando aprovação" value={i.aguardando} icon={Hourglass} tone="cyan" hint={ofTotal} />
         <StatCard label="Tempo médio" value={i.tempoMedio ? formatDuration(i.tempoMedio) : "Sem dados"} icon={Timer} tone="blue" hint="Por tarefa concluída" />
         <StatCard label="Tempo trabalhado" value={i.tempoTotal ? formatDuration(i.tempoTotal) : "Sem dados"} icon={Clock} tone="stone" hint="Soma dos apontamentos" />
         <StatCard label="Ocorrências" value={i.ocorrencias} icon={CircleAlert} tone="orange" hint="Registradas no período" />
-        <StatCard label="Total de tarefas" value={i.total} icon={ClipboardList} tone="stone" hint="No período filtrado" />
       </div>
 
       <Section title="Distribuição por status">
@@ -144,9 +139,11 @@ export default async function ReportsPage({ searchParams }: { searchParams: Prom
       </Section>
 
       <Section title={`Tarefas do período (${data.tasks.length})`}>
-        <div className="overflow-x-auto">
-          <table className="w-full min-w-[820px] text-sm">
-            <thead>
+        <Paged
+          stickyHead
+          tableClassName="min-w-[820px]"
+          className="divide-y divide-stone-100"
+          head={
               <tr className="border-b border-stone-200 text-left text-xs text-stone-500">
                 <th className="py-2 pr-2">Código</th>
                 <th className="py-2 pr-2">Programada</th>
@@ -157,9 +154,9 @@ export default async function ReportsPage({ searchParams }: { searchParams: Prom
                 <th className="py-2 pr-2">Status</th>
                 <th className="py-2 text-right">Tempo</th>
               </tr>
-            </thead>
-            <tbody className="divide-y divide-stone-100">
-              {data.tasks.slice(0, 300).map((t) => (
+          }
+        >
+              {data.tasks.map((t) => (
                 <tr key={t.id}>
                   <td className="py-2 pr-2">
                     <Link href={`/tarefas/${t.id}`} className="font-semibold text-brand-700 hover:underline">
@@ -177,10 +174,7 @@ export default async function ReportsPage({ searchParams }: { searchParams: Prom
                   <td className="py-2 text-right tabular-nums">{formatDuration(t.totalMinutes)}</td>
                 </tr>
               ))}
-            </tbody>
-          </table>
-          {data.tasks.length > 300 && <p className="mt-2 text-xs text-stone-500">Exibindo 300 de {data.tasks.length}. Exporte para ver todas.</p>}
-        </div>
+        </Paged>
       </Section>
 
       <Section title="Relatórios gerados recentemente" className="no-print">

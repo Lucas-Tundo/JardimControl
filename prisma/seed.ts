@@ -1,13 +1,11 @@
-import { mkdir, writeFile } from "node:fs/promises";
-import path from "node:path";
 import { randomBytes } from "node:crypto";
 import bcrypt from "bcryptjs";
-import { PrismaClient } from "@prisma/client";
 import { addDays, dateKey, fromLocal } from "../src/lib/dates";
+import { db } from "../src/lib/db";
 import { generateAllRecurrences } from "../src/lib/recurrence";
 
-const db = new PrismaClient();
-const UPLOAD_DIR = path.join(process.cwd(), "uploads");
+const LEADER_PASSWORD = { admin: process.env.SEED_ADMIN_PASSWORD || "admin123", lider: process.env.SEED_LIDER_PASSWORD || "lider123" };
+const GARDENER_PASSWORD = process.env.SEED_GARDENER_PASSWORD || "123456";
 
 // ---------------------------------------------------------------------------
 // Imagens ilustrativas (SVG) para os dados de demonstração
@@ -56,7 +54,7 @@ ${trees.join("")}
 let seedCounter = 1;
 async function makeImage(label: string, variant: Variant): Promise<string> {
   const fileName = `seed-${randomBytes(5).toString("hex")}.svg`;
-  await writeFile(path.join(UPLOAD_DIR, fileName), sceneSvg(label, variant, seedCounter++));
+  await db.storedFile.create({ data: { name: fileName, mimeType: "image/svg+xml", data: new TextEncoder().encode(sceneSvg(label, variant, seedCounter++)) } });
   return fileName;
 }
 
@@ -64,8 +62,6 @@ const hash = (p: string) => bcrypt.hashSync(p, 10);
 const token = () => randomBytes(8).toString("base64url");
 
 async function main() {
-  await mkdir(UPLOAD_DIR, { recursive: true });
-
   const existing = await db.user.count();
   if (existing > 0) {
     console.log("Banco já possui dados. Use `npm run db:reset` para recriar.");
@@ -77,12 +73,12 @@ async function main() {
   const day = (offset: number, time = "08:00") => fromLocal(dateKey(addDays(now, offset)), time);
 
   // ---------------- Usuários e equipes ----------------
-  const admin = await db.user.create({ data: { name: "Ana Souza", login: "admin", passwordHash: hash("admin123"), role: "ADMIN", email: "ana@empresa.com" } });
-  const lider = await db.user.create({ data: { name: "Roberto Lima", login: "lider", passwordHash: hash("lider123"), role: "LIDER", email: "roberto@empresa.com" } });
-  const joao = await db.user.create({ data: { name: "João Silva", login: "joao", passwordHash: hash("123456"), role: "JARDINEIRO", phone: "(11) 98888-0001" } });
-  const carlos = await db.user.create({ data: { name: "Carlos Pereira", login: "carlos", passwordHash: hash("123456"), role: "JARDINEIRO", phone: "(11) 98888-0002" } });
-  const maria = await db.user.create({ data: { name: "Maria Oliveira", login: "maria", passwordHash: hash("123456"), role: "JARDINEIRO", phone: "(11) 98888-0003" } });
-  const pedro = await db.user.create({ data: { name: "Pedro Santos", login: "pedro", passwordHash: hash("123456"), role: "JARDINEIRO", phone: "(11) 98888-0004" } });
+  const admin = await db.user.create({ data: { name: "Ana Souza", login: "admin", passwordHash: hash(LEADER_PASSWORD.admin), role: "ADMIN", email: "ana@empresa.com" } });
+  const lider = await db.user.create({ data: { name: "Roberto Lima", login: "lider", passwordHash: hash(LEADER_PASSWORD.lider), role: "LIDER", email: "roberto@empresa.com" } });
+  const joao = await db.user.create({ data: { name: "João Silva", login: "joao", passwordHash: hash(GARDENER_PASSWORD), role: "JARDINEIRO", phone: "(11) 98888-0001" } });
+  const carlos = await db.user.create({ data: { name: "Carlos Pereira", login: "carlos", passwordHash: hash(GARDENER_PASSWORD), role: "JARDINEIRO", phone: "(11) 98888-0002" } });
+  const maria = await db.user.create({ data: { name: "Maria Oliveira", login: "maria", passwordHash: hash(GARDENER_PASSWORD), role: "JARDINEIRO", phone: "(11) 98888-0003" } });
+  const pedro = await db.user.create({ data: { name: "Pedro Santos", login: "pedro", passwordHash: hash(GARDENER_PASSWORD), role: "JARDINEIRO", phone: "(11) 98888-0004" } });
 
   const equipe = await db.team.create({
     data: { name: "Equipe de Jardinagem", description: "Poda, corte de grama e canteiros", color: "#16a34a", members: { create: [{ userId: joao.id }, { userId: carlos.id }, { userId: maria.id }] } },
@@ -456,8 +452,10 @@ async function main() {
   });
 
   console.log("Dados de demonstração criados.");
-  console.log("  Liderança: admin / admin123  ·  lider / lider123");
-  console.log("  Jardineiros: joao, carlos, maria, pedro / 123456");
+  if (!process.env.SEED_ADMIN_PASSWORD) {
+    console.log("  Liderança: admin / admin123  ·  lider / lider123");
+    console.log("  Jardineiros: joao, carlos, maria, pedro / 123456");
+  }
 }
 
 main()

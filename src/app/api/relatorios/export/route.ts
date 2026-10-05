@@ -2,11 +2,13 @@ import { NextResponse, type NextRequest } from "next/server";
 import { getCurrentUser, isLeader } from "@/lib/auth";
 import { audit } from "@/lib/audit";
 import { db } from "@/lib/db";
-import { buildReportPdf, buildReportXlsx, reportFileName } from "@/lib/report-export";
 import { computeReport } from "@/lib/reports";
 
-export const runtime = "nodejs";
-
+/**
+ * Calcula os dados do relatório e registra a exportação. O arquivo PDF/XLSX é
+ * montado no navegador (src/components/report-export-buttons.tsx), o que mantém
+ * as bibliotecas de geração fora do servidor.
+ */
 export async function GET(req: NextRequest) {
   const user = await getCurrentUser();
   if (!user || !isLeader(user)) return NextResponse.json({ error: "Sem permissão." }, { status: 403 });
@@ -14,9 +16,6 @@ export async function GET(req: NextRequest) {
   const sp = Object.fromEntries(req.nextUrl.searchParams.entries());
   const format = sp.formato === "xlsx" ? "xlsx" : "pdf";
   const data = await computeReport(sp);
-
-  const body = format === "pdf" ? buildReportPdf(data, user.name) : await buildReportXlsx(data, user.name);
-  const fileName = reportFileName(format, data.generatedAt);
 
   const { formato: _formato, ...filters } = sp;
   const report = await db.report.create({
@@ -30,11 +29,5 @@ export async function GET(req: NextRequest) {
   });
   await audit({ entityType: "REPORT", entityId: report.id, action: "EXPORTADO", summary: `Relatório ${format.toUpperCase()} gerado (${data.indicators.total} tarefas)`, userId: user.id, details: data.filters });
 
-  return new NextResponse(new Uint8Array(body), {
-    headers: {
-      "Content-Type": format === "pdf" ? "application/pdf" : "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-      "Content-Disposition": `attachment; filename="${fileName}"`,
-      "Cache-Control": "no-store",
-    },
-  });
+  return NextResponse.json({ data, userName: user.name }, { headers: { "Cache-Control": "no-store" } });
 }

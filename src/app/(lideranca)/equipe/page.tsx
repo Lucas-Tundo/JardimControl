@@ -1,3 +1,4 @@
+import { Paged } from "@/components/paged";
 import { TeamDialogButton, ToggleUserButton, UserDialogButton } from "@/components/team-forms";
 import { PageHeader, Section, cn } from "@/components/ui";
 import { isAdmin, requireLeader } from "@/lib/auth";
@@ -9,9 +10,9 @@ import { plural } from "@/lib/text";
 export const metadata = { title: "Equipe e usuários" };
 
 const ROLE_STYLE: Record<string, string> = {
-  ADMIN: "bg-purple-100 text-purple-800",
-  LIDER: "bg-sky-100 text-sky-800",
-  JARDINEIRO: "bg-brand-100 text-brand-800",
+  ADMIN: "bg-brand-700 text-white",
+  LIDER: "bg-brand-100 text-brand-800",
+  JARDINEIRO: "bg-stone-100 text-stone-700",
 };
 
 export default async function TeamPage() {
@@ -46,9 +47,11 @@ export default async function TeamPage() {
       {!admin && <p className="rounded-[10px] bg-sky-50 p-3 text-sm text-sky-900">Somente administradores podem cadastrar ou alterar usuários. Você pode gerenciar as equipes.</p>}
 
       <Section title={<>Usuários <span className="font-normal tabular-nums text-stone-500">{users.length}</span></>}>
-        <div className="overflow-x-auto">
-          <table className="w-full min-w-[640px] text-sm">
-            <thead>
+        <Paged
+          stickyHead
+          tableClassName="min-w-[640px]"
+          className="divide-y divide-stone-100"
+          head={
               <tr className="border-b border-stone-200 text-left text-xs text-stone-500">
                 <th className="py-2 pr-3 font-medium">Nome</th>
                 <th className="py-2 pr-3 font-medium">Login</th>
@@ -58,8 +61,8 @@ export default async function TeamPage() {
                 <th className="py-2 pr-3 text-center font-medium">Concluídas no mês</th>
                 <th className="py-2" />
               </tr>
-            </thead>
-            <tbody className="divide-y divide-stone-100">
+          }
+        >
               {users.map((u) => (
                 <tr key={u.id} className={cn(!u.active && "opacity-50")}>
                   <td className="py-2.5 pr-3 font-medium text-stone-900">
@@ -89,13 +92,11 @@ export default async function TeamPage() {
                   </td>
                 </tr>
               ))}
-            </tbody>
-          </table>
-        </div>
+        </Paged>
       </Section>
 
       <div>
-        <h2 className="section-title mb-3">Equipes <span className="font-normal tabular-nums text-stone-500">{teams.length}</span></h2>
+        <h2 className="group-title mb-3">Equipes <span className="font-normal tabular-nums text-stone-500">{teams.length}</span></h2>
         <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
           {teams.map((t) => (
             <div key={t.id} className="card card-pad">

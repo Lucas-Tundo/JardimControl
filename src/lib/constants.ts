@@ -9,7 +9,7 @@ export const TASK_STATUS = {
   PROGRAMADA: { label: "Programada", badge: "bg-blue-50 text-blue-800", dot: "bg-blue-500", hex: "#3b82f6" },
   PENDENTE: { label: "Pendente", badge: "bg-amber-50 text-amber-800", dot: "bg-amber-400", hex: "#f5b400" },
   EM_ANDAMENTO: { label: "Em andamento", badge: "bg-orange-50 text-orange-800", dot: "bg-orange-500", hex: "#f97316" },
-  AGUARDANDO_APROVACAO: { label: "Aguardando aprovação", badge: "bg-violet-50 text-violet-800", dot: "bg-violet-500", hex: "#8b5cf6" },
+  AGUARDANDO_APROVACAO: { label: "Aguardando aprovação", badge: "bg-cyan-50 text-cyan-800", dot: "bg-cyan-600", hex: "#0891b2" },
   CONCLUIDA: { label: "Concluída", badge: "bg-green-50 text-green-800", dot: "bg-green-600", hex: "#16a34a" },
   ATRASADA: { label: "Atrasada", badge: "bg-red-50 text-red-700", dot: "bg-red-600", hex: "#dc2626" },
   CANCELADA: { label: "Cancelada", badge: "bg-stone-100 text-stone-600", dot: "bg-stone-500", hex: "#6e6e73" },

@@ -6,6 +6,7 @@ import { parseChecklistJson } from "@/lib/tasks";
 import { PERIODICITIES, labelOf } from "@/lib/constants";
 import { GENERATION_HORIZON_DAYS } from "@/lib/recurrence";
 import { plural } from "@/lib/text";
+import { Paged } from "@/components/paged";
 import { RecurrenceDialogButton, ToggleRecurrenceButton } from "@/components/recurrence-form";
 import { EmptyState, PageHeader, PriorityBadge, TypeLabel, cn } from "@/components/ui";
 
@@ -40,7 +41,7 @@ export default async function RecurrencesPage() {
       {recs.length === 0 ? (
         <EmptyState icon={Repeat} title="Nenhuma manutenção recorrente cadastrada">Crie uma recorrência para o sistema gerar as tarefas sozinho.</EmptyState>
       ) : (
-        <div className="grid gap-3 md:grid-cols-2">
+        <Paged as="div" className="grid gap-3 md:grid-cols-2" pageSize={10}>
           {recs.map((r) => (
             <div key={r.id} className={cn("card card-pad", !r.active && "opacity-60")}>
               <div className="flex items-start justify-between gap-2">
@@ -99,7 +100,7 @@ export default async function RecurrencesPage() {
               </div>
             </div>
           ))}
-        </div>
+        </Paged>
       )}
     </>
   );
